@@ -17,10 +17,10 @@ First we'll setup a dedicated etcd cluster, which will be used to bootstrap the 
 
 ### The Stack
 
-* [CoreOS](https://coreos.com) (440.0.0 or later)
+* [CoreOS](https://coreos.com) (v440.0.0+)
 * [etcd](https://github.com/coreos/etcd)
 * [Rudder](https://github.com/coreos/rudder)
-* [Fleet](https://github.com/coreos/fleet) (0.8.0 or later)
+* [Fleet](https://github.com/coreos/fleet) (v0.8.0+)
 * [Kubernetes](https://github.com/GoogleCloudPlatform/kubernetes)
 * [kube-register](https://github.com/kelseyhightower/kube-register)
 
