@@ -4,6 +4,7 @@ hostname: etcd
 coreos:
   fleet:
     etcd_servers: http://127.0.0.1:4001
+	metadata: role=etcd
   etcd:
     name: etcd
     addr: 192.168.12.10:4001

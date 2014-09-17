@@ -6,7 +6,7 @@ The target audience for this tutorial understands how Kubernetes works at a basi
 
 ## Overview
 
-Frist we'll setup a dedicated etcd cluster, which will be used to bootstrap the other components. Then we'll build a CoreOS cluster where each machine will have Rudder, Fleet, and Docker configured during boot via cloud-config. Next we'll deploy Kubernetes using Fleet and a collection of systemd unit files. Finally we'll wrap things up by deploying [kube-register](https://github.com/kelseyhightower/kube-register), which will auto register Kubernetes' Kubelets with the Kubernetes API server.
+First we'll setup a dedicated etcd cluster, which will be used to bootstrap the other components. Then we'll build a CoreOS cluster where each machine will have Rudder, Fleet, and Docker configured during boot via cloud-config. Next we'll deploy Kubernetes using Fleet and a collection of systemd unit files. Finally we'll wrap things up by deploying [kube-register](https://github.com/kelseyhightower/kube-register), which will auto register Kubernetes' Kubelets with the Kubernetes API server.
 
 * [Setup a dedicated etcd cluster](#setup-a-dedicated-etcd-cluster)
 * [Configure Rudder](#configure-rudder)
@@ -82,20 +82,20 @@ Once the CoreOS machines have booted, you can use the fleetctl client to list th
 ```
 $ fleetctl list-machines
 MACHINE		IP		        METADATA
-318dec89...	192.168.12.228	kubernetes=true
-e3d66a0f...	192.168.12.229	kubernetes=true
-eec45118...	192.168.12.10	-
+318dec89...	192.168.12.228	role=kubernetes
+e3d66a0f...	192.168.12.229	role=kubernetes
+eec45118...	192.168.12.10	role=etcd
 ```
 
-Notice all the "worker" machines have the `kubernetes=true` metadata field.
+Notice all the "worker" machines have the `role=kubernetes` metadata field.
 
 ## Deploying Kubernetes with Fleet
 
-Two of the Kubernetes components, the Kubelet and Proxy service, must run on every Kubernetes machine. Fleet can ensure this happens using [global units](https://github.com/coreos/fleet/blob/master/Documentation/unit-files-and-scheduling.md#unit-scheduling) and metadata filtering. The following unit files will run on every CoreOS machine where `kubernetes=true`:
+Two of the Kubernetes components, the Kubelet and Proxy service, must run on every Kubernetes machine. Fleet can ensure this happens using [global units](https://github.com/coreos/fleet/blob/master/Documentation/unit-files-and-scheduling.md#unit-scheduling) and metadata filtering. The following unit files will run on every CoreOS machine where `role=kubernetes`:
 
 ```
 fleetctl start kube-proxy.service
-fleetctl start kubelet.service
+fleetctl start kube-kubelet.service
 ```
 
 The other Kubernetes components make up the Kubernetes Master and only require a single instance to be running. The Kubernetes Master can run anywhere in the cluster, but we'll need to locate the IP address of the Kubernetes API server once it's up and running so we can configure the kubecfg Kubernetes client. 
@@ -116,14 +116,14 @@ kube-controller-manager.service 318dec89.../192.168.12.228  active  running
 kube-proxy.service              318dec89.../192.168.12.228  active  running
 kube-proxy.service              e3d66a0f.../192.168.12.229  active  running
 kube-scheduler.service          318dec89.../192.168.12.228  active  running
-kubelet.service                 318dec89.../192.168.12.228  active  running
-kubelet.service                 e3d66a0f.../192.168.12.229  active  running
+kube-kubelet.service            318dec89.../192.168.12.228  active  running
+kube-kubelet.service            e3d66a0f.../192.168.12.229  active  running
 ```
 
 Once you've located the kube-apiserver set the KUBERNETES_MASTER environment variable, which configures the kubecfg client use this API server:
 
 ```
-export KUBERNETES_MASTER="http://${kube_apiserver_machine_ip}:8080"
+export KUBERNETES_MASTER="http://${kubernetes_apiserver_machine_ip}:8080"
 ```
 
 ## Auto Registering Kubernetes Kubelets with kube-register

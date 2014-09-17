@@ -3,7 +3,7 @@
 coreos:
   fleet:
     etcd_servers: http://192.168.12.10:4001
-    metadata: kubernetes=true
+    metadata: role=kubernetes
   units:
     - name: etcd.service
       mask: true

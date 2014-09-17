@@ -11,4 +11,4 @@ RestartSec=10
 
 [X-Fleet]
 Global=true
-MachineMetadata=kubernetes=true
+MachineMetadata=role=kubernetes
