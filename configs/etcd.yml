@@ -1,0 +1,35 @@
+#cloud-config
+
+hostname: etcd
+coreos:
+  fleet:
+    etcd_servers: http://127.0.0.1:4001
+  etcd:
+    name: etcd
+    addr: 192.168.12.10:4001
+    bind-addr: 0.0.0.0
+    peer-addr: 192.168.12.10:7001
+    cluster-active-size: 1
+    snapshot: true
+  units:
+    - name: static.network
+      command: start
+      content: |
+        [Match]
+        Name=eno16777736
+
+        [Network]
+        Address=192.168.12.10/24
+        DNS=192.168.12.2
+        Gateway=192.168.12.2
+    - name: etcd.service
+      command: start
+    - name: fleet.service
+      command: start
+    - name: docker.service
+      mask: true
+  update:
+    group: alpha
+    reboot-strategy: off
+ssh_authorized_keys:
+    - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDHo+5nVpxDhnWBPhEuQ7D7ZYELvA5+fPEWfHmMUwBdW069FSfX1LtbVAUKW7NGMfCxTijQMfvmFt7i+o28uqrVGN+xlDdkKTarPYO/Ux6Rukw0D5RZLVDVdRIOV8Si26pkFp4ezs1NFnCFsPTXD8U4cQ1lok//x248oKGsB4ZWuRNf4PCaIdXDveXdQRbaV5SDo9JEt9VkmfSraH5JENguP51RhFJYzWQAB1QbRZrHYUfZbE+pb/XDTdSPidfRCvss9fDrrhviZjv1Gr8C9jbmSGRB8pKwGC/GWV/mj8nYEY1K3/0c/N9NNIPtmvNkQjq7eGsSUf0cM8ZbwWugr8cB kelseyhightower
