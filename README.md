@@ -47,18 +47,20 @@ For simplicity, setup a single node etcd cluster using the following cloud-confi
 I'm using a static IP address to make it easy to locate the etcd node later. Once you have the etcd IP, export the following environment variables used by the etcdctl and fleetctl clients:
 
 ```
-export ETCDCTL_PEERS=http://${etcd_ip}:4001 
-export FLEETCTL_ENDPOINT=http://${etcd_ip}:4001
+$ export ETCDCTL_PEERS=http://192.168.12.10:4001
+$ export FLEETCTL_ENDPOINT=http://192.168.12.10:4001
 ```
 
 Check that both the etcdctl and fleetctl clients are working:
 
 ```
-etcdctl ls /
+$ etcdctl ls /
 ```
 
 ```
-fleetctl list-machines
+$ fleetctl list-machines
+MACHINE     IP              METADATA
+9c1aa398... 192.168.12.10   role=etcd
 ```
 
 ## Configure Rudder
@@ -66,7 +68,7 @@ fleetctl list-machines
 Rudder is used to setup and manage an overlay network, which will allow containers on different Kubernetes hosts to communicate. Rudder reads it's runtime configuration from etcd, and requires a network block to be allocated for use by Kubernetes. Add the Rudder configuration using etcdctl:
 
 ```
-etcdctl mk /coreos.com/network/config '{"Network":"10.0.0.0/16"}'
+$ etcdctl mk /coreos.com/network/config '{"Network":"10.0.0.0/16"}'
 ```
 
 ## Add Machines to the Cluster
@@ -81,10 +83,10 @@ Once the CoreOS machines have booted, you can use the fleetctl client to list th
 
 ```
 $ fleetctl list-machines
-MACHINE		IP		        METADATA
-318dec89...	192.168.12.228	role=kubernetes
-e3d66a0f...	192.168.12.229	role=kubernetes
-eec45118...	192.168.12.10	role=etcd
+MACHINE     IP              METADATA
+9c1aa398... 192.168.12.10   role=etcd
+a6681f2c... 192.168.12.229  role=kubernetes
+fe36d443... 192.168.12.228  role=kubernetes
 ```
 
 Notice all the "worker" machines have the `role=kubernetes` metadata field.
@@ -94,16 +96,16 @@ Notice all the "worker" machines have the `role=kubernetes` metadata field.
 Two of the Kubernetes components, the Kubelet and Proxy service, must run on every Kubernetes machine. Fleet can ensure this happens using [global units](https://github.com/coreos/fleet/blob/master/Documentation/unit-files-and-scheduling.md#unit-scheduling) and metadata filtering. The following unit files will run on every CoreOS machine where `role=kubernetes`:
 
 ```
-fleetctl start kube-proxy.service
-fleetctl start kube-kubelet.service
+$ fleetctl start kube-proxy.service
+$ fleetctl start kube-kubelet.service
 ```
 
 The other Kubernetes components make up the Kubernetes Master and only require a single instance to be running. The Kubernetes Master can run anywhere in the cluster, but we'll need to locate the IP address of the Kubernetes API server once it's up and running so we can configure the kubecfg Kubernetes client. 
 
 ```
-fleetctl start kube-apiserver.service
-fleetctl start kube-scheduler.service
-fleetctl start kube-controller-manager.service
+$ fleetctl start kube-apiserver.service
+$ fleetctl start kube-scheduler.service
+$ fleetctl start kube-controller-manager.service
 ```
 
 List the running units:
@@ -111,19 +113,19 @@ List the running units:
 ```
 $ fleetctl list-units
 UNIT                            MACHINE                     ACTIVE  SUB
-kube-apiserver.service          318dec89.../192.168.12.228  active  running
-kube-controller-manager.service 318dec89.../192.168.12.228  active  running
-kube-proxy.service              318dec89.../192.168.12.228  active  running
-kube-proxy.service              e3d66a0f.../192.168.12.229  active  running
-kube-scheduler.service          318dec89.../192.168.12.228  active  running
-kube-kubelet.service            318dec89.../192.168.12.228  active  running
-kube-kubelet.service            e3d66a0f.../192.168.12.229  active  running
+kube-apiserver.service          a6681f2c.../192.168.12.229  active  running
+kube-controller-manager.service a6681f2c.../192.168.12.229  active  running
+kube-kubelet.service            a6681f2c.../192.168.12.229  active  running
+kube-kubelet.service            fe36d443.../192.168.12.228  active  running
+kube-proxy.service              a6681f2c.../192.168.12.229  active  running
+kube-proxy.service              fe36d443.../192.168.12.228  active  running
+kube-scheduler.service          a6681f2c.../192.168.12.229  active  running
 ```
 
 Once you've located the kube-apiserver set the KUBERNETES_MASTER environment variable, which configures the kubecfg client use this API server:
 
 ```
-export KUBERNETES_MASTER="http://${kubernetes_apiserver_machine_ip}:8080"
+$ export KUBERNETES_MASTER="http://192.168.12.229:8080"
 ```
 
 ## Auto Registering Kubernetes Kubelets with kube-register
@@ -137,7 +139,7 @@ Thanks to Fleet global units, new machines will get the Kubernetes Kubelet insta
 Start the registration service using fleet:
 
 ```
-fleetctl start kube-register.service
+$ fleetctl start kube-register.service
 ```
 
 The kube-register service needs to know where the Kubernetes API server is in order to register machines. This is accomplished using a Fleet requirement in the kube-register.service unit file:
